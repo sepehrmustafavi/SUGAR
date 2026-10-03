@@ -19,7 +19,7 @@ class OfflinePipeline:
     def __init__(self, builder: ProfileBuilder, item_embeddings: np.ndarray,
                  m_chk: int, commit_lag_lambda: int, threshold_tau: float,
                  cooldown_nmin: int, personalized_threshold: bool = False,
-                 xi: float = 1.0):
+                 xi: float = 1.0, enable_drift: bool = True):
         self.builder = builder
         self.emb = item_embeddings          # (n_items, d_e), frozen
         self.m_chk = m_chk
@@ -30,6 +30,7 @@ class OfflinePipeline:
         self.xi = xi
         self.stats = {"revisions_fired": 0, "checkpoints": 0,
                       "consolidations_fired": 0}
+        self.enable_drift = enable_drift
 
     def run(self, sequences: dict, item_descriptors_by_idx: list,
             out_path: str, show_progress: bool = True) -> SnapshotStore:
@@ -87,20 +88,22 @@ class OfflinePipeline:
                 w_mean = recent_window_mean(self.emb, window)
                 if profile_emb is not None and w_mean is not None:
                     sim = freshness_score(profile_emb, w_mean)
-                    state = machine.update(sim, t_chk)
-                    if state == "Revising":
-                        new_profile = self.builder.revise(
-                            profile, [descriptors[v] for v in window])
-                        if new_profile is not profile:
-                            profile = new_profile
-                            profile_emb = self._embed(profile)
-                        consolidated.update(window)
-                        machine.commit_revision(t_chk)
-                        # rescore against the revised profile
-                        sim = (freshness_score(profile_emb, w_mean)
-                               if profile_emb is not None and w_mean is not None
-                               else 0.0)
-                        self.stats["revisions_fired"] += 1
+                    state = "Idle"
+                    if self.enable_drift:
+                        state = machine.update(sim, t_chk)    
+                        if state == "Revising":
+                            new_profile = self.builder.revise(
+                                profile, [descriptors[v] for v in window])
+                            if new_profile is not profile:
+                                profile = new_profile
+                                profile_emb = self._embed(profile)
+                            consolidated.update(window)
+                            machine.commit_revision(t_chk)
+                            # rescore against the revised profile
+                            sim = (freshness_score(profile_emb, w_mean)
+                                if profile_emb is not None and w_mean is not None
+                                else 0.0)
+                            self.stats["revisions_fired"] += 1
                 else:
                     sim = 0.0  # no profile yet / empty window
             else:

@@ -101,7 +101,13 @@ def run_m2m3(cfg: dict) -> dict:
         m_chk=cfg["offline"]["checkpoint_interval_mchk"],
         commit_lag_lambda=cfg["offline"]["commit_lag_lambda"],
         threshold_tau=cfg["offline"]["threshold_tau"],
-        cooldown_nmin=cfg["offline"]["cooldown_nmin"])
+        cooldown_nmin=cfg["offline"]["cooldown_nmin"],
+        enable_drift=cfg["offline"].get("enable_drift", True))
+
+    suffix = "_nodrift" if not cfg["offline"].get("enable_drift", True) else ""
+    out_path = (Path(cfg["offline"].get("snapshot_dir",
+                                        "outputs/snapshots"))
+                / f"{name}{suffix}.pkl")
 
     out_path = Path(cfg["offline"].get("snapshot_dir",
                                        "outputs/snapshots")) / f"{name}.pkl"
@@ -124,8 +130,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/base.yaml")
     ap.add_argument("--phase", default="all", choices=["m1", "m2m3", "all"])
+    ap.add_argument("--no_drift", action="store_true",
+                    help="A2 ablation: disable M3 drift detection/revisions")
     args = ap.parse_args()
     cfg = load_config(args.config)
+    if args.no_drift:
+        cfg["offline"]["enable_drift"] = False
     if args.phase in ("m1", "all"):
         run_m1(cfg)
     if args.phase in ("m2m3", "all"):

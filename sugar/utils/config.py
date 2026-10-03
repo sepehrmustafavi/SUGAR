@@ -29,13 +29,19 @@ def load_config(path: str, base: str = None, overrides: list = None) -> dict:
         with open(base, "r", encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
     with open(path, "r", encoding="utf-8") as f:
-        cfg = _deep_merge(cfg, yaml.safe_load(f) or {})
-
+        raw = yaml.safe_load(f) or {}
+    # implicit inheritance: merge over base.yaml when the file sits in configs/
+    if base is None and raw.pop("inherits", None) == "base":
+        base_path = Path(path).resolve().parents[1] / "base.yaml"
+        if base_path.exists():
+            with open(base_path, "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+    cfg = _deep_merge(cfg, raw)
     for ov in overrides or []:
         if "=" not in ov:
-            raise ValueError(f"override نامعتبر: '{ov}' (فرمت: key=value)")
+            raise ValueError(f"invalid override: '{ov}' (format: key=value)")
         key, value = ov.split("=", 1)
-        _apply_dotted(cfg, key, yaml.safe_load(value))  
+        _apply_dotted(cfg, key, yaml.safe_load(value))
     return cfg
 
 

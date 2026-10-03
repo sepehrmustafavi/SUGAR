@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.eggs/
+build/
+dist/
+.env
+data/raw/
+outputs/
+checkpoints/
+*.ckpt
+*.pt
+.ipynb_checkpoints/

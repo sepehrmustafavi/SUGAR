@@ -31,6 +31,13 @@ from sugar.training.trainer import build_window_means
 
 MODEL_MODES = {"sugar": "full", "a3_fixed_gate": "fixed_gate"}
 
+# Training tags: run_ablation.py saves A-variants as {variant}_{model}_{dataset}
+# (e.g. a3_a3_fixed_gate_beauty) while run_all.sh trains SUGAR as {model}_{dataset}
+# (e.g. sugar_beauty). Map eval_model -> default training tag.
+DEFAULT_TAGS = {
+    "sugar": "sugar_{dataset}",
+    "a3_fixed_gate": "a3_a3_fixed_gate_{dataset}",
+}
 
 def corrupt_store(store: SnapshotStore, p: float, seed: int) -> SnapshotStore:
     rng = np.random.default_rng(seed)
@@ -65,14 +72,17 @@ def main():
     ap.add_argument("--p", type=float, required=True)
     ap.add_argument("--eval_model", default="sugar",
                     choices=list(MODEL_MODES))
-    ap.add_argument("--ckpt_tag", required=True,
-                    help="training tag of the checkpoint to load, e.g. sugar_beauty")
+    ap.add_argument("--ckpt_tag", default=None,
+                    help="training tag of the checkpoint to load; default: "
+                         "derived from eval_model+dataset (e.g. sugar_beauty, "
+                         "a3_a3_fixed_gate_beauty)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
     set_seed(cfg["seed"])
     device = cfg["device"] if torch.cuda.is_available() else "cpu"
     name = args.dataset
+    tag = args.ckpt_tag or DEFAULT_TAGS[args.eval_model].format(dataset=name)
 
     sequences, items, _ = load_processed(name, cfg["data"]["processed_dir"])
     n_items = len(items["item2idx"]) + 1
@@ -95,7 +105,7 @@ def main():
                        max_len=cfg["model"]["max_len"],
                        kappa=cfg["model"]["kappa"],
                        mode=MODEL_MODES[args.eval_model])
-    ckpt = Path(cfg["training"]["checkpoint_dir"]) / f"{args.ckpt_tag}_best.pt"
+    ckpt = Path(cfg["training"]["checkpoint_dir"])/ f"{tag}_best.pt"
     model.load_state_dict(torch.load(ckpt, map_location=device))
     model.to(device)
 
@@ -109,7 +119,7 @@ def main():
                                  window_means=window_means)
 
     out = {"experiment": "E4.1", "model": args.eval_model, "dataset": name,
-           "p": args.p, "test": metrics, "seed": cfg["seed"]}
+           "p": args.p, "test": metrics, "seed": cfg["seed"], "tag": tag}
     f = Path("outputs/results") / \
         f"e41_{args.eval_model}_{name}_p{args.p}.json"
     with open(f, "w") as fh:

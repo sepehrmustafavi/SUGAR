@@ -81,29 +81,16 @@ class SUGARModel(nn.Module):
         window_means: {user_idx: np.ndarray (d_e,)} e_bar(R_u) precomputed
         by the trainer (recent-window mean of frozen item embeddings).
         """
-        B, L = seq.shape
-        device = seq.device
         h_seq = self.backbone(seq)                                # (B, L, d)
 
         if self.mode == "no_profile":
             return h_seq  # A1: sequence-only baseline with same protocol
 
-        if snapshot_store is None:
-            raise ValueError("snapshot_store required unless mode='no_profile'")
-
-        plans = build_batch_side_info(snapshot_store, seq_lens.tolist()
-                                      if not torch.is_tensor(seq_lens)
-                                      else seq_lens.tolist(), None, self.d_e,
-                                      strict=strict) if False else None
-        # (plans built per user below with correct signature)
-        plans = []
-        for b in range(B):
-            u = int(seq[b, 0].item())  # user idx supplied via trainer attr
-            plans.append(None)
-        # The trainer passes user indices explicitly; see trainer (batch 10).
         raise NotImplementedError(
-            "Use forward_with_users(); plain forward is intentionally "
-            "unavailable to keep the user<->row binding explicit.")
+            "SUGARModel.forward() is intentionally unavailable for "
+            "mode='%s': the user<->row binding must stay explicit. Use "
+            "forward_with_users(seq, user_indices, seq_lens, ...) instead."
+            % self.mode)
 
     def forward_with_users(self, seq: torch.Tensor, user_indices: torch.Tensor,
                            seq_lens: torch.Tensor, snapshot_store,

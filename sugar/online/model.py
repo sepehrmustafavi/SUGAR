@@ -26,7 +26,6 @@ from sugar.online.backbone import TransformerBackbone
 from sugar.online.projection import ProfileProjection
 from sugar.online.fusion import UncertaintyGatedFusion
 from sugar.online.social_gate import SocialGate
-from sugar.data.snapshot_loader import build_batch_side_info
 
 
 class SUGARModel(nn.Module):

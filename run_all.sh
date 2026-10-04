@@ -9,7 +9,7 @@ DATASET=${1:-all}
 run_dataset () {
   local D=$1
   echo "=== [$D] offline M1 + M2/M3 ==="
-  python scripts/run_offline.py --phase all
+  python scripts/run_offline.py --phase all --dataset $D
 
   echo "=== [$D] baselines ==="
   for M in gru4rec sasrec bert4rec unisrec; do
@@ -45,9 +45,8 @@ python scripts/vary_lag.py --dataset beauty --ckpt_tag sugar_beauty
 
 echo "=== E3 drift injection + offline rerun ==="
 python scripts/inject_drift.py --dataset beauty
-# note: rerun offline on the drifted dataset (switch dataset in config or
-# use a copied config with data.dataset=beauty_drift)
-python scripts/run_offline.py --phase m2m3
+
+python scripts/run_offline.py --phase m2m3 --dataset beauty_drift
 
 echo "=== E5 social graph substitution ==="
 python scripts/swap_graph.py --dataset yelp_filtered \

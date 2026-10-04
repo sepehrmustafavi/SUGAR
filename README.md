@@ -12,7 +12,7 @@ the projected profile, gated by a reliability score.
 ## Setup
 
 pip install -e .
-cp .env.example .env   # optional
+cp .env.example .env  # optional: DATA_DIR, OUTPUT_DIR, HF_TOKEN
 
 ## Pipeline
 
@@ -24,14 +24,14 @@ python scripts/prepare_data.py --config configs/datasets/beauty.yaml
 python scripts/prepare_data.py --config configs/datasets/yelp_filtered.yaml
 
 # 2) offline stage (M1 cached; M2/M3 -> snapshot store)
-python scripts/run_offline.py --phase all
+python scripts/run_offline.py --phase all --dataset beauty   # or yelp_filtered
 
 # 3) training (SUGAR + baselines, identical protocol)
 python scripts/train.py --model sugar --dataset beauty --tag sugar_beauty
 python scripts/train_baseline.py --model sasrec --dataset beauty --tag sasrec_beauty
 
 # 4) everything else
-make ablation e4 e5 e7 e8 e9 report
+make e3 e4 e5 e6 e7 e8 e9 ablation report
 # or the full chain:
 bash run_all.sh all
 

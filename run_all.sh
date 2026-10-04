@@ -37,7 +37,7 @@ for P in 0.2 0.4 0.6 0.8; do
   python scripts/corrupt_profiles.py --dataset beauty --p $P \
       --eval_model sugar --ckpt_tag sugar_beauty
   python scripts/corrupt_profiles.py --dataset beauty --p $P \
-      --eval_model a3_fixed_gate --ckpt_tag a3_fixed_gate_beauty
+      --eval_model a3_fixed_gate --ckpt_tag a3_a3_fixed_gate_beauty
 done
 
 echo "=== E4.2 lag sweep ==="

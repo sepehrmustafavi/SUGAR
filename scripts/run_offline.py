@@ -132,8 +132,13 @@ def main():
     ap.add_argument("--phase", default="all", choices=["m1", "m2m3", "all"])
     ap.add_argument("--no_drift", action="store_true",
                     help="A2 ablation: disable M3 drift detection/revisions")
+    ap.add_argument("--dataset", default=None,
+                    help="override data.dataset from the config "
+                         "(e.g. beauty, yelp_filtered, beauty_drift)")
     args = ap.parse_args()
     cfg = load_config(args.config)
+    if args.dataset:
+        cfg["data"]["dataset"] = args.dataset
     if args.no_drift:
         cfg["offline"]["enable_drift"] = False
     if args.phase in ("m1", "all"):
